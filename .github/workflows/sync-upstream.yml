@@ -1,0 +1,82 @@
+
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: ghostty-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch and Merge Upstream
+        id: sync
+        run: |
+          BEFORE=$(git rev-parse HEAD)
+
+          git fetch https://github.com/juftin/ghostty.git main
+
+          UPSTREAM=$(git rev-parse FETCH_HEAD)
+
+          if git merge-base --is-ancestor "$UPSTREAM" HEAD; then
+            echo "Already up to date."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git merge --no-edit "$UPSTREAM"
+
+          AFTER=$(git rev-parse HEAD)
+
+          echo "Previous commit: $BEFORE"
+          echo "Updated commit: $AFTER"
+
+          git push origin main
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "commit=$AFTER" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Build
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run build-macos.yml --ref main
+          echo "Build workflow triggered."
+
+      - name: Synchronization Summary
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          COMMIT: ${{ steps.sync.outputs.commit }}
+        run: |
+          echo "## Upstream synchronization" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$CHANGED" = "true" ]; then
+            echo "New upstream changes merged." >> "$GITHUB_STEP_SUMMARY"
+            echo "Commit: $COMMIT" >> "$GITHUB_STEP_SUMMARY"
+            echo "Build workflow triggered." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Already up to date. No build necessary." >> "$GITHUB_STEP_SUMMARY"
+          fi
