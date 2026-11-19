@@ -1,0 +1,50 @@
+
+name: Build Ghostty for macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Install Metal Toolchain
+        run: |
+          xcrun -sdk macosx metal --version || \
+            xcodebuild -downloadComponent MetalToolchain
+
+      - name: Build Ghostty Universal
+        run: |
+          zig build \
+            -Doptimize=ReleaseFast \
+            -Dxcframework-target=universal
+
+      - name: Verify Compatibility
+        run: |
+          APP=macos/build/ReleaseLocal/Ghostty.app
+          lipo -archs "$APP/Contents/MacOS/ghostty"
+          /usr/libexec/PlistBuddy \
+            -c "Print :LSMinimumSystemVersion" \
+            "$APP/Contents/Info.plist"
+
+      - name: Package Application
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            macos/build/ReleaseLocal/Ghostty.app \
+            Ghostty-Universal.zip
+
+      - name: Upload Application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghostty-Universal
+          path: Ghostty-Universal.zip
