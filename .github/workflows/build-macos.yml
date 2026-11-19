@@ -1,13 +1,24 @@
+
 name: Build and Release Ghostty
 
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/sync-upstream.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
   group: ghostty-release
@@ -20,18 +31,24 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - name: Detect Zig Version
         id: zig
         run: |
           VERSION=$(sed -n 's/.*minimum_zig_version = "\(.*\)".*/\1/p' build.zig.zon)
+          test -n "$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Required Zig version: $VERSION"
 
       - name: Install Zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: ${{ steps.zig.outputs.version }}
+          use-cache: true
+          cache-size-limit: 6144
 
       - name: Install Metal Toolchain
         run: |
@@ -45,13 +62,30 @@ jobs:
             -Dxcframework-target=universal
 
       - name: Verify Compatibility
+        id: metadata
         run: |
           APP=macos/build/ReleaseLocal/Ghostty.app
-          lipo -verify_arch x86_64 arm64 \
-            "$APP/Contents/MacOS/ghostty"
-          /usr/libexec/PlistBuddy \
-            -c "Print :LSMinimumSystemVersion" \
-            "$APP/Contents/Info.plist"
+          BIN="$APP/Contents/MacOS/ghostty"
+          PLIST="$APP/Contents/Info.plist"
+
+          test -f "$BIN"
+
+          ARCHS=$(lipo "$BIN" -archs)
+          lipo "$BIN" -verify_arch x86_64 arm64
+
+          MIN_OS=$(/usr/libexec/PlistBuddy \
+            -c "Print :LSMinimumSystemVersion" "$PLIST")
+
+          VERSION=$(/usr/libexec/PlistBuddy \
+            -c "Print :CFBundleShortVersionString" "$PLIST")
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "min_os=$MIN_OS" >> "$GITHUB_OUTPUT"
+          echo "architectures=$ARCHS" >> "$GITHUB_OUTPUT"
+
+          echo "Ghostty version: $VERSION"
+          echo "Architectures: $ARCHS"
+          echo "Minimum macOS: $MIN_OS"
 
       - name: Package Application
         run: |
@@ -62,25 +96,79 @@ jobs:
           shasum -a 256 Ghostty-Universal.zip \
             > Ghostty-Universal.zip.sha256
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+          ls -lh Ghostty-Universal.zip*
+
+      - name: Generate Build Attestation
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
-          name: Ghostty-Universal
-          path: |
-            Ghostty-Universal.zip
-            Ghostty-Universal.zip.sha256
+          subject-path: Ghostty-Universal.zip
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+          MIN_OS: ${{ steps.metadata.outputs.min_os }}
+          ARCHS: ${{ steps.metadata.outputs.architectures }}
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u +%Y-%m-%d)
           TAG="build-$(date -u +%Y%m%d)-${SHORT_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          cat > release-notes.md <<EOF
+          ## Ghostty Universal Build
+
+          | Property | Value |
+          |---|---|
+          | Ghostty version | $VERSION |
+          | Commit | $GITHUB_SHA |
+          | Build date | $BUILD_DATE |
+          | Architectures | $ARCHS |
+          | Minimum macOS | $MIN_OS |
+          | Build | ReleaseFast |
+
+          ### Installation
+
+          Download Ghostty-Universal.zip, extract it,
+          and install Ghostty.app in your Applications folder.
+
+          Existing users can install the latest build
+          using the ghostty-update script.
+
+          ### Verification
+
+          A SHA-256 checksum and GitHub build provenance
+          attestation are provided for this build.
+          EOF
 
           gh release create "$TAG" \
             Ghostty-Universal.zip \
             Ghostty-Universal.zip.sha256 \
             --target "$GITHUB_SHA" \
-            --title "Ghostty Universal $SHORT_SHA" \
-            --notes "Automated universal macOS build from commit $GITHUB_SHA. Includes Intel and Apple Silicon support." \
+            --title "Ghostty $VERSION Universal ($SHORT_SHA)" \
+            --notes-file release-notes.md \
+            --generate-notes \
             --latest
+
+      - name: Upload Artifact
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: Ghostty-Universal
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            Ghostty-Universal.zip
+            Ghostty-Universal.zip.sha256
+
+      - name: Build Summary
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          MIN_OS: ${{ steps.metadata.outputs.min_os }}
+          ARCHS: ${{ steps.metadata.outputs.architectures }}
+        run: |
+          echo "## Ghostty build successful" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version: $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Architectures: $ARCHS" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Minimum macOS: $MIN_OS" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Download latest release](https://github.com/${GITHUB_REPOSITORY}/releases/latest)" >> "$GITHUB_STEP_SUMMARY"
