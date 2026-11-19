@@ -9,6 +9,7 @@ on:
       - 'LICENSE'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/sync-upstream.yml'
+      - 'ghostty-update.sh'
   workflow_dispatch:
 
 permissions:
@@ -140,6 +141,7 @@ jobs:
           EOF
 
           gh release create "$TAG" \
+            ghostty-update.sh \
             Ghostty-Universal.zip \
             Ghostty-Universal.zip.sha256 \
             --target "$GITHUB_SHA" \
