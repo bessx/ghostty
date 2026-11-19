@@ -1,8 +1,17 @@
-
-name: Build Ghostty for macOS
+name: Build and Release Ghostty
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghostty-release
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -13,10 +22,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect Zig Version
+        id: zig
+        run: |
+          VERSION=$(sed -n 's/.*minimum_zig_version = "\(.*\)".*/\1/p' build.zig.zon)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
+          version: ${{ steps.zig.outputs.version }}
 
       - name: Install Metal Toolchain
         run: |
@@ -32,7 +47,8 @@ jobs:
       - name: Verify Compatibility
         run: |
           APP=macos/build/ReleaseLocal/Ghostty.app
-          lipo -archs "$APP/Contents/MacOS/ghostty"
+          lipo -verify_arch x86_64 arm64 \
+            "$APP/Contents/MacOS/ghostty"
           /usr/libexec/PlistBuddy \
             -c "Print :LSMinimumSystemVersion" \
             "$APP/Contents/Info.plist"
@@ -43,8 +59,28 @@ jobs:
             macos/build/ReleaseLocal/Ghostty.app \
             Ghostty-Universal.zip
 
-      - name: Upload Application
+          shasum -a 256 Ghostty-Universal.zip \
+            > Ghostty-Universal.zip.sha256
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Ghostty-Universal
-          path: Ghostty-Universal.zip
+          path: |
+            Ghostty-Universal.zip
+            Ghostty-Universal.zip.sha256
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG="build-$(date -u +%Y%m%d)-${SHORT_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          gh release create "$TAG" \
+            Ghostty-Universal.zip \
+            Ghostty-Universal.zip.sha256 \
+            --target "$GITHUB_SHA" \
+            --title "Ghostty Universal $SHORT_SHA" \
+            --notes "Automated universal macOS build from commit $GITHUB_SHA. Includes Intel and Apple Silicon support." \
+            --latest
