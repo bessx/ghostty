@@ -1,226 +1,227 @@
 <!-- LOGO -->
-<h1>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
-  <br>Ghostty
-</h1>
-  <p align="center">
-    Fast, native, feature-rich terminal emulator pushing modern features.
-    <br />
-    A native GUI or embeddable library via <code>libghostty</code>.
-    <br />
-    <a href="#about">About</a>
-    ·
-    <a href="https://ghostty.org/download">Download</a>
-    ·
-    <a href="https://ghostty.org/docs">Documentation</a>
-    ·
-    <a href="CONTRIBUTING.md">Contributing</a>
-    ·
-    <a href="HACKING.md">Developing</a>
-  </p>
+  <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Ghostty logo" width="128">
 </p>
 
-## About
+# Ghostty with Quick Terminal Tabs
 
-Ghostty is a terminal emulator that differentiates itself by being
-fast, feature-rich, and native. While there are many excellent terminal
-emulators available, they all force you to choose between speed,
-features, or native UIs. Ghostty provides all three.
+[![Build and Release Ghostty](https://github.com/bessx/ghostty/actions/workflows/build-macos.yml/badge.svg)](https://github.com/bessx/ghostty/actions/workflows/build-macos.yml)
+[![Latest release](https://img.shields.io/github/v/release/bessx/ghostty)](https://github.com/bessx/ghostty/releases/latest)
 
-**`libghostty`** is a cross-platform, zero-dependency C and Zig library
-for building terminal emulators or utilizing terminal functionality
-(such as style parsing). Anyone can use `libghostty` to build a terminal
-emulator or embed a terminal into their own applications. See
-[Ghostling](https://github.com/ghostty-org/ghostling) for a minimal complete project
-example or the [`examples` directory](https://github.com/ghostty-org/ghostty/tree/main/example)
-for smaller examples of using `libghostty` in C and Zig.
+An unofficial macOS distribution of [Ghostty](https://ghostty.org/) with **tab support in Quick Terminal**, bringing an iTerm2-style tabbed dropdown terminal experience to Ghostty without requiring users to compile it themselves.
 
-For more details, see [About Ghostty](https://ghostty.org/docs/about).
+This fork tracks [juftin/ghostty](https://github.com/juftin/ghostty), which incorporates [adrum's Quick Terminal tab support (PR #9857)](https://github.com/ghostty-org/ghostty/pull/9857). This repository provides automated universal macOS builds, releases, and a simple installation and update script.
 
-## Download
+[Latest release](https://github.com/bessx/ghostty/releases/latest) · [Installation](#installation) · [Quick Terminal setup](#quick-terminal-setup) · [Troubleshooting](#troubleshooting) · [Official Ghostty documentation](https://ghostty.org/docs)
 
-See the [download page](https://ghostty.org/download) on the Ghostty website.
+## Features
 
-## Documentation
+- Multiple tabs within Quick Terminal.
+- Keyboard shortcuts for creating, closing, and switching tabs.
+- Tab renaming, coloring, dragging, and rearranging.
+- Quick Terminal session restoration.
+- Universal macOS builds for both Intel and Apple Silicon.
+- Automatic upstream synchronization every six hours and new builds when changes are merged.
+- GitHub Releases with SHA-256 checksums and build provenance attestations.
+- A command-line updater with automatic installation and previous-version backups.
 
-See the [documentation](https://ghostty.org/docs) on the Ghostty website.
+## System requirements
 
-## Contributing and Developing
+- macOS 13 Ventura or later, on supported Mac hardware.
+- Intel (x86_64) or Apple Silicon (arm64).
+- An administrator account for installation in `/Applications`.
 
-If you have any ideas, issues, etc. regarding Ghostty, or would like to
-contribute to Ghostty through pull requests, please check out our
-["Contributing to Ghostty"](CONTRIBUTING.md) document. Those who would like
-to get involved with Ghostty's development as well should also read the
-["Developing Ghostty"](HACKING.md) document for more technical details.
+No Xcode, Zig, Homebrew, or local compilation is required. The universal binary includes both processor architectures. The custom build has been tested on macOS Ventura on an Intel Mac; compatibility with every newer macOS release is not independently verified. Linux and Windows builds are not provided by this fork.
 
-## Roadmap and Status
+## Installation
 
-Ghostty is stable and in use by millions of people and machines daily.
+> [!IMPORTANT]
+> These are unofficial, non-notarized builds. The installer removes the downloaded app's quarantine attribute and applies an ad-hoc signature. Review the [installer source](https://github.com/bessx/ghostty/blob/main/ghostty-update.sh) before running it, and only install builds you trust. The installer replaces `/Applications/Ghostty.app`, so save your work and run it from Terminal.app or iTerm2, not Ghostty itself.
 
-The high-level ambitious plan for the project, in order:
+### Install using the updater (recommended)
 
-|  #  | Step                                                    | Status |
-| :-: | ------------------------------------------------------- | :----: |
-|  1  | Standards-compliant terminal emulation                  |   ✅   |
-|  2  | Competitive performance                                 |   ✅   |
-|  3  | Rich windowing features -- multi-window, tabbing, panes |   ✅   |
-|  4  | Native Platform Experiences                             |   ✅   |
-|  5  | Cross-platform `libghostty` for Embeddable Terminals    |   ✅   |
-|  6  | Ghostty-only Terminal Control Sequences                 |   ❌   |
+Download the updater into your personal executable directory:
 
-Additional details for each step in the big roadmap below:
-
-#### Standards-Compliant Terminal Emulation
-
-Ghostty implements all of the regularly used control sequences and
-can run every mainstream terminal program without issue. For legacy sequences,
-we've done a [comprehensive xterm audit](https://github.com/ghostty-org/ghostty/issues/632)
-comparing Ghostty's behavior to xterm and building a set of conformance
-test cases.
-
-In addition to legacy sequences (what you'd call real "terminal" emulation),
-Ghostty also supports more modern sequences than almost any other terminal
-emulator. These features include things like the Kitty graphics protocol,
-Kitty image protocol, clipboard sequences, synchronized rendering,
-light/dark mode notifications, and many, many more.
-
-We believe Ghostty is one of the most compliant and feature-rich terminal
-emulators available.
-
-Terminal behavior is partially a de jure standard
-(i.e. [ECMA-48](https://ecma-international.org/publications-and-standards/standards/ecma-48/))
-but mostly a de facto standard as defined by popular terminal emulators
-worldwide. Ghostty takes the approach that our behavior is defined by
-(1) standards, if available, (2) xterm, if the feature exists, (3)
-other popular terminals, in that order. This defines what the Ghostty project
-views as a "standard."
-
-#### Competitive Performance
-
-Ghostty is generally in the same performance category as the other highest
-performing terminal emulators.
-
-"The same performance category" means that Ghostty is much faster than
-traditional or "slow" terminals and is within an unnoticeable margin of the
-well-known "fast" terminals. For example, Ghostty and Alacritty are usually within
-a few percentage points of each other on various benchmarks, but are both
-something like 100x faster than Terminal.app and iTerm. However, Ghostty
-is much more feature rich than Alacritty and has a much more native app
-experience.
-
-This performance is achieved through high-level architectural decisions and
-low-level optimizations. At a high-level, Ghostty has a multi-threaded
-architecture with a dedicated read thread, write thread, and render thread
-per terminal. Our renderer uses OpenGL on Linux and Metal on macOS.
-Our read thread has a heavily optimized terminal parser that leverages
-CPU-specific SIMD instructions. Etc.
-
-#### Rich Windowing Features
-
-The Mac and Linux (build with GTK) apps support multi-window, tabbing, and
-splits with additional features such as tab renaming, coloring, etc. These
-features allow for a higher degree of organization and customization than
-single-window terminals.
-
-#### Native Platform Experiences
-
-Ghostty is a cross-platform terminal emulator but we don't aim for a
-least-common-denominator experience. There is a large, shared core written
-in Zig but we do a lot of platform-native things:
-
-- The macOS app is a true SwiftUI-based application with all the things you
-  would expect such as real windowing, menu bars, a settings GUI, etc.
-- macOS uses a true Metal renderer with CoreText for font discovery.
-- macOS supports AppleScript, Apple Shortcuts (AppIntents), etc.
-- The Linux app is built with GTK.
-- The Linux app integrates deeply with systemd if available for things
-  like always-on, new windows in a single instance, cgroup isolation, etc.
-
-Our goal with Ghostty is for users of whatever platform they run Ghostty
-on to think that Ghostty was built for their platform first and maybe even
-exclusively. We want Ghostty to feel like a native app on every platform,
-for the best definition of "native" on each platform.
-
-#### Cross-platform `libghostty` for Embeddable Terminals
-
-In addition to being a standalone terminal emulator, Ghostty is a
-C-compatible library for embedding a fast, feature-rich terminal emulator
-in any 3rd party project. This library is called `libghostty`.
-
-Due to the scope of this project, we're breaking libghostty down into
-separate libraries, starting with `libghostty-vt`. The goal of
-this project is to focus on parsing terminal sequences and maintaining
-terminal state. This is covered in more detail in this
-[blog post](https://mitchellh.com/writing/libghostty-is-coming).
-
-`libghostty-vt` is already available and usable today for Zig and C and
-is compatible for macOS, Linux, Windows, and WebAssembly. The functionality
-is extremely stable (since its been proven in Ghostty GUI for a long time),
-but the API signatures are still in flux.
-
-`libghostty` is already heavily in use. See [`examples`](https://github.com/ghostty-org/ghostty/tree/main/example)
-for small examples of using `libghostty` in C and Zig or the
-[Ghostling](https://github.com/ghostty-org/ghostling) project for a
-complete example. See [awesome-libghostty](https://github.com/Uzaaft/awesome-libghostty)
-for a list of projects and resources related to `libghostty`.
-
-We haven't tagged libghostty with a version yet and we're still working
-on a better docs experience, but our [Doxygen website](https://libghostty.tip.ghostty.org/)
-is a good resource for the C API.
-
-#### Ghostty-only Terminal Control Sequences
-
-We want and believe that terminal applications can and should be able
-to do so much more. We've worked hard to support a wide variety of modern
-sequences created by other terminal emulators towards this end, but we also
-want to fill the gaps by creating our own sequences.
-
-We've been hesitant to do this up until now because we don't want to create
-more fragmentation in the terminal ecosystem by creating sequences that only
-work in Ghostty. But, we do want to balance that with the desire to push the
-terminal forward with stagnant standards and the slow pace of change in the
-terminal ecosystem.
-
-We haven't done any of this yet.
-
-## Crash Reports
-
-Ghostty has a built-in crash reporter that will generate and save crash
-reports to disk. The crash reports are saved to the `$XDG_STATE_HOME/ghostty/crash`
-directory. If `$XDG_STATE_HOME` is not set, the default is `~/.local/state`.
-**Crash reports are _not_ automatically sent anywhere off your machine.**
-
-Crash reports are only generated the next time Ghostty is started after a
-crash. If Ghostty crashes and you want to generate a crash report, you must
-restart Ghostty at least once. You should see a message in the log that a
-crash report was generated.
-
-> [!NOTE]
->
-> Use the `ghostty +crash-report` CLI command to get a list of available crash
-> reports. A future version of Ghostty will make the contents of the crash
-> reports more easily viewable through the CLI and GUI.
-
-Crash reports end in the `.ghosttycrash` extension. The crash reports are in
-[Sentry envelope format](https://develop.sentry.dev/sdk/envelopes/). You can
-upload these to your own Sentry account to view their contents, but the format
-is also publicly documented so any other available tools can also be used.
-The `ghostty +crash-report` CLI command can be used to list any crash reports.
-A future version of Ghostty will show you the contents of the crash report
-directly in the terminal.
-
-To send the crash report to the Ghostty project, you can use the following
-CLI command using the [Sentry CLI](https://docs.sentry.io/cli/installation/):
-
-```shell-session
-SENTRY_DSN=https://e914ee84fd895c4fe324afa3e53dac76@o4507352570920960.ingest.us.sentry.io/4507850923638784 sentry-cli send-envelope --raw <path to ghostty crash>
+```sh
+mkdir -p ~/.local/bin
+curl -fsSL \
+  https://raw.githubusercontent.com/bessx/ghostty/main/ghostty-update.sh \
+  -o ~/.local/bin/ghostty-update
+chmod +x ~/.local/bin/ghostty-update
 ```
 
-> [!WARNING]
->
-> The crash report can contain sensitive information. The report doesn't
-> purposely contain sensitive information, but it does contain the full
-> stack memory of each thread at the time of the crash. This information
-> is used to rebuild the stack trace but can also contain sensitive data
-> depending on when the crash occurred.
+Review the script if desired, then install the latest build:
+
+```sh
+~/.local/bin/ghostty-update
+```
+
+The script downloads the latest release, verifies its SHA-256 checksum, extracts the application, signs it locally, verifies the signature, backs up the previous installation, and installs and launches Ghostty in `/Applications`. It will request your administrator password for installation.
+
+To run the updater from any directory using just `ghostty-update`, add the following line to your `~/.zshrc` if `~/.local/bin` is not already on your PATH:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then reload your shell configuration:
+
+```sh
+source ~/.zshrc
+```
+
+### Manual installation
+
+Download `Ghostty-Universal.zip` and `Ghostty-Universal.zip.sha256` from the [latest release](https://github.com/bessx/ghostty/releases/latest). In Terminal.app, verify the archive and extract it to a temporary folder:
+
+```sh
+cd ~/Downloads
+shasum -a 256 -c Ghostty-Universal.zip.sha256
+```
+
+Proceed only if the checksum reports `OK`. Quit all running Ghostty instances, then run:
+
+```sh
+WORKDIR=$(mktemp -d)
+ditto -x -k ~/Downloads/Ghostty-Universal.zip "$WORKDIR"
+xattr -dr com.apple.quarantine "$WORKDIR/Ghostty.app"
+codesign --force --deep --sign - "$WORKDIR/Ghostty.app"
+codesign --verify --deep --strict "$WORKDIR/Ghostty.app"
+```
+
+Verify that signing succeeds before proceeding. Back up any existing installation, then move the new application into `/Applications`:
+
+```sh
+mkdir -p ~/Backups/Ghostty
+if [ -d /Applications/Ghostty.app ]; then
+  sudo mv /Applications/Ghostty.app \
+    "$HOME/Backups/Ghostty/Ghostty-$(date +%Y%m%d-%H%M%S).app"
+fi
+sudo ditto "$WORKDIR/Ghostty.app" /Applications/Ghostty.app
+open -n /Applications/Ghostty.app
+```
+
+The updater is recommended because it handles these steps automatically and attempts to restore the previous version if copying the new application fails.
+
+## Updating Ghostty
+
+From Terminal.app or another terminal emulator, run:
+
+```sh
+ghostty-update
+```
+
+If you did not add the updater directory to your PATH, use `~/.local/bin/ghostty-update` instead.
+
+The updater skips installation if its recorded checksum matches the latest release. To force a reinstall, including when switching from an official Ghostty build:
+
+```sh
+ghostty-update --force
+```
+
+### Disable official automatic updates
+
+Add the following to your existing Ghostty configuration so that this custom build is not replaced by an official release:
+
+```ini
+auto-update = off
+```
+
+Use `ghostty-update` to manage updates from this fork instead. See the [Ghostty configuration documentation](https://ghostty.org/docs/config) for configuration file locations and options.
+
+## Quick Terminal setup
+
+Quick Terminal is Ghostty's dropdown terminal. It has no default toggle keybinding in this fork. Add a global binding to your Ghostty configuration, for example:
+
+```ini
+keybind = global:ctrl+grave_accent=toggle_quick_terminal
+```
+
+Choose a shortcut that does not conflict with another application. Completely restart Ghostty, grant Accessibility permissions if prompted, and use the shortcut to open Quick Terminal. Use your usual new-tab shortcut (typically `Cmd+T`) to create tabs inside it, and `Cmd+W` to close a tab.
+
+## Troubleshooting
+
+### Quick Terminal asks for Accessibility permissions repeatedly
+
+The updater uses generic ad-hoc code signing so that an Apple Developer account or a custom certificate is not required. macOS may invalidate previously granted Accessibility permissions when an application is replaced or its signature changes.
+
+If Ghostty asks for Accessibility access even though it already appears enabled:
+
+1. Quit Ghostty completely.
+2. Open Terminal.app and reset Ghostty's Accessibility authorization:
+
+   ```sh
+   tccutil reset Accessibility com.mitchellh.ghostty
+   ```
+
+3. Relaunch the correct application:
+
+   ```sh
+   open -n /Applications/Ghostty.app
+   ```
+
+4. Open **System Settings > Privacy & Security > Accessibility** and enable Ghostty again. If necessary, remove the stale entry and add `/Applications/Ghostty.app` manually.
+5. Quit and reopen Ghostty if prompted, then test your Quick Terminal shortcut.
+
+This command resets Accessibility access for Ghostty only. It does not clear your Ghostty configuration. Do not add the reset command to the updater, since it would revoke access on every update.
+
+### Quick Terminal tabs are missing after an update
+
+Make sure macOS is launching this fork rather than a separate official Ghostty installation. Both applications use the same bundle identifier, so duplicate copies may cause confusion.
+
+```sh
+ls -ld /Applications/Ghostty.app ~/Applications/Ghostty.app 2>/dev/null
+/Applications/Ghostty.app/Contents/MacOS/ghostty +version
+open -n /Applications/Ghostty.app
+```
+
+Custom builds include a source commit hash in their version output. If you maintain another Ghostty installation, move it out of your Applications directories after quitting it, and remove any stale Dock shortcuts. Pin the intended application again.
+
+You can also check whether the Quick Terminal tab implementation is present in the installed binary:
+
+```sh
+strings /Applications/Ghostty.app/Contents/MacOS/ghostty | \
+  grep -iE 'QuickTerminalTab|QuickTerminalTabBar' | head -10
+```
+
+### Roll back to the previous installation
+
+The updater keeps one backup at `~/Backups/Ghostty/Ghostty.app`. If it exists, quit Ghostty, then restore it from Terminal.app:
+
+```sh
+test -d "$HOME/Backups/Ghostty/Ghostty.app" && \
+  sudo mv /Applications/Ghostty.app \
+    "$HOME/Backups/Ghostty/Ghostty-replaced-$(date +%Y%m%d-%H%M%S).app" && \
+  sudo ditto "$HOME/Backups/Ghostty/Ghostty.app" /Applications/Ghostty.app && \
+  rm -f "$HOME/.config/ghostty-update/checksum" && \
+  open -n /Applications/Ghostty.app
+```
+
+### Download fails with a 404 error
+
+Check the [Releases page](https://github.com/bessx/ghostty/releases) and [Actions dashboard](https://github.com/bessx/ghostty/actions). The updater requires a successfully published release with the universal ZIP and its checksum; a running or failed build will not produce a new release.
+
+## Automated builds and releases
+
+Two GitHub Actions workflows maintain this distribution:
+
+| Workflow | Purpose |
+| --- | --- |
+| [Sync Upstream](.github/workflows/sync-upstream.yml) | Checks juftin's fork every six hours, merges new changes, and triggers a build when needed. |
+| [Build and Release Ghostty](.github/workflows/build-macos.yml) | Compiles a universal macOS application, verifies architectures, creates the archive and checksum, generates build provenance, and publishes a GitHub Release. |
+
+Release assets include `Ghostty-Universal.zip`, `Ghostty-Universal.zip.sha256`, and, from the first build including the updater, `ghostty-update.sh`. Documentation-only and updater-only pushes do not normally trigger recompilation. Build failures or upstream merge conflicts may require manual intervention.
+
+The release checksum detects download corruption or mismatches. It is not a substitute for trusting the source. Published build provenance can also be verified using GitHub CLI:
+
+```sh
+gh attestation verify Ghostty-Universal.zip --repo bessx/ghostty
+```
+
+## Credits and upstream documentation
+
+This is an unofficial distribution, not an official Ghostty release. All credit for Ghostty belongs to the [Ghostty project and its contributors](https://github.com/ghostty-org/ghostty). Special thanks to [adrum](https://github.com/adrum) and the contributors to [PR #9857](https://github.com/ghostty-org/ghostty/pull/9857) for Quick Terminal tabs, and to [juftin](https://github.com/juftin) for maintaining the upstream fork and local macOS build tooling.
+
+For general Ghostty features, documentation, contribution guidelines, roadmap, and crash reporting, see the [upstream README](https://github.com/juftin/ghostty/blob/main/README.md) and [official documentation](https://ghostty.org/docs). For problems specific to these builds or the installer, use this repository's issue tracker.
+
+Distributed under the repository's [LICENSE](LICENSE).
